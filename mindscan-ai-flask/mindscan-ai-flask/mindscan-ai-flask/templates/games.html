@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MindScan AI - Stress Relief Games</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        /* Breathing Game */
+        .breathe-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 250px;
+            position: relative;
+        }
+
+        .breathe-circle {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            transition: all 4s ease-in-out;
+        }
+
+        .breathe-circle.inhale {
+            transform: scale(2);
+            background: linear-gradient(135deg, #34d399, #10b981);
+            box-shadow: 0 0 40px rgba(16, 185, 129, 0.6);
+        }
+
+        .breathe-circle.exhale {
+            transform: scale(1);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+        }
+
+        /* Garden Calm Game */
+        .garden-container {
+            position: relative;
+            min-height: 250px;
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .garden-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(70px, 1fr));
+            gap: 0.8rem;
+            width: 100%;
+            max-width: 260px;
+        }
+
+        .garden-tile {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            border-radius: 18px;
+            background: linear-gradient(145deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+            color: #f8fafc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            cursor: pointer;
+            transition: transform 0.2s ease, background 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .garden-tile:hover {
+            transform: translateY(-3px);
+            background: linear-gradient(145deg, rgba(255,255,255,0.18), rgba(255,255,255,0.06));
+        }
+
+        .garden-tile.bloomed {
+            background: linear-gradient(145deg, rgba(56, 189, 248, 0.2), rgba(96, 165, 250, 0.18));
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.18);
+        }
+
+        .affirmation-box {
+            min-height: 140px;
+            margin-top: 1rem;
+            border-radius: 16px;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.06);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #e2e8f0;
+            font-size: 1rem;
+            line-height: 1.5;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(50px, 1fr));
+            gap: 0.75rem;
+            width: 100%;
+            max-width: 280px;
+            margin: 1rem auto 0;
+        }
+
+        .color-tile {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            border-radius: 14px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.08);
+            cursor: pointer;
+            transition: transform 0.2s ease, background 0.3s ease;
+        }
+
+        .color-tile:hover {
+            transform: translateY(-2px);
+        }
+
+        .painted {
+            box-shadow: 0 0 15px rgba(96, 165, 250, 0.25);
+        }
+
+        .score-board {
+            position: absolute;
+            top: 12px;
+            right: 18px;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .btn-game {
+            margin-top: 1rem;
+            padding: 0.5rem 1.5rem;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <h2 onclick="window.location.href='/dashboard'">🧠 MindScan AI</h2>
+        <div class="nav-links" id="nav-links" style="display: none;">
+            <a href="/dashboard">Dashboard</a>
+            <a href="/report">Reports</a>
+            <a href="/chatbot">Chat</a>
+            <a href="/journal">Journal</a>
+            <a href="/games" class="active">Games</a>
+            <a href="/settings">Settings</a>
+        </div>
+        <div class="auth-buttons" id="auth-buttons"></div>
+    </nav>
+
+    <div class="main-content">
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <h2>🎮 Stress Relief Games</h2>
+            <p class="text-muted">Take a moment to relax and re-center yourself.</p>
+        </div>
+
+        <div class="games-grid">
+            <!-- Breathing Exercise -->
+            <div class="glass-card text-center">
+                <h3>🌬️ Box Breathing</h3>
+                <p class="text-sm text-muted">A simple exercise to calm your nervous system.</p>
+                <div class="breathe-container mt-2">
+                    <div class="breathe-circle" id="breatheCircle">Breathe</div>
+                </div>
+                <button class="btn btn-game" id="breatheBtn" onclick="startBreathing()">Start Exercise</button>
+            </div>
+
+            <!-- Garden Calm Game -->
+            <div class="glass-card text-center">
+                <h3>🌿 Calm Garden</h3>
+                <p class="text-sm text-muted">Tap the growing flowers to relax and build a peaceful garden.</p>
+                <div class="garden-container mt-2" id="gardenGame">
+                    <div class="score-board">Blooms: <span id="bloomCount">0</span></div>
+                    <div id="garden-grid" class="garden-grid"></div>
+                </div>
+                <button class="btn btn-game" onclick="startGardenGame()">Grow Garden</button>
+            </div>
+
+            <!-- Affirmation Bloom -->
+            <div class="glass-card text-center">
+                <h3>🌼 Affirmation Bloom</h3>
+                <p class="text-sm text-muted">Generate a gentle affirmation and let it settle in.</p>
+                <div class="affirmation-box" id="affirmationBox">Tap the button to receive a calming affirmation.</div>
+                <button class="btn btn-game" onclick="generateAffirmation()">Generate Affirmation</button>
+            </div>
+
+            <!-- Color Calm Mosaic -->
+            <div class="glass-card text-center">
+                <h3>🎨 Color Calm</h3>
+                <p class="text-sm text-muted">Tap tiles to fill your soothing mosaic with color.</p>
+                <div class="garden-container mt-2" id="colorGame">
+                    <div class="score-board">Tiles painted: <span id="paintedCount">0</span></div>
+                    <div id="color-grid" class="color-grid"></div>
+                </div>
+                <button class="btn btn-game" onclick="startColorCalm()">Start Mosaic</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+    <script>
+        requireAuth();
+
+        // Breathing Exercise Logic
+        let breathingInterval;
+        function startBreathing() {
+            const circle = document.getElementById("breatheCircle");
+            const btn = document.getElementById("breatheBtn");
+            if (breathingInterval) {
+                clearInterval(breathingInterval);
+                breathingInterval = null;
+                circle.className = "breathe-circle";
+                circle.innerText = "Breathe";
+                btn.innerText = "Start Exercise";
+                return;
+            }
+            btn.innerText = "Stop Exercise";
+            let state = 0; // 0: Inhale, 1: Hold, 2: Exhale, 3: Hold
+            circle.className = "breathe-circle inhale";
+            circle.innerText = "Inhale...";
+
+            breathingInterval = setInterval(() => {
+                state = (state + 1) % 4;
+                if (state === 0) {
+                    circle.className = "breathe-circle inhale";
+                    circle.innerText = "Inhale...";
+                } else if (state === 1) {
+                    circle.innerText = "Hold...";
+                } else if (state === 2) {
+                    circle.className = "breathe-circle exhale";
+                    circle.innerText = "Exhale...";
+                } else if (state === 3) {
+                    circle.innerText = "Hold...";
+                }
+            }, 4000);
+        }
+
+        // Garden Calm Game Logic
+        const gardenSize = 9;
+        let bloomCount = 0;
+
+        function startGardenGame() {
+            const grid = document.getElementById("garden-grid");
+            bloomCount = 0;
+            document.getElementById("bloomCount").innerText = bloomCount;
+            grid.innerHTML = "";
+
+            for (let i = 0; i < gardenSize; i++) {
+                const tile = document.createElement("div");
+                tile.className = "garden-tile";
+                tile.innerText = "🌱";
+                tile.onclick = () => growFlower(tile);
+                grid.appendChild(tile);
+            }
+        }
+
+        function growFlower(tile) {
+            if (tile.classList.contains("bloomed")) return;
+            tile.classList.add("bloomed");
+            tile.innerText = "🌸";
+            bloomCount += 1;
+            document.getElementById("bloomCount").innerText = bloomCount;
+            tile.style.transform = "scale(1.1)";
+            setTimeout(() => {
+                tile.style.transform = "scale(1)";
+            }, 200);
+        }
+
+        const affirmations = [
+            "You are allowed to rest and recharge.",
+            "Each breath brings calm and clarity.",
+            "You have everything you need to handle today.",
+            "Small steps forward are still progress.",
+            "Let go of what you cannot control.",
+            "You are worthy of peace and kindness.",
+            "Breathe in strength, breathe out tension.",
+            "You deserve a moment of quiet joy."
+        ];
+
+        function generateAffirmation() {
+            const box = document.getElementById("affirmationBox");
+            const index = Math.floor(Math.random() * affirmations.length);
+            box.innerText = affirmations[index];
+        }
+
+        const colorPalette = ["#a5f3fc", "#c7d2fe", "#f9a8d4", "#fcd34d", "#6ee7b7", "#fda4af"];
+        let paintedCount = 0;
+
+        function startColorCalm() {
+            const grid = document.getElementById("color-grid");
+            paintedCount = 0;
+            document.getElementById("paintedCount").innerText = paintedCount;
+            grid.innerHTML = "";
+
+            for (let i = 0; i < 12; i++) {
+                const tile = document.createElement("div");
+                tile.className = "color-tile";
+                tile.onclick = () => paintTile(tile);
+                grid.appendChild(tile);
+            }
+        }
+
+        function paintTile(tile) {
+            const current = tile.dataset.colorIndex ? Number(tile.dataset.colorIndex) : -1;
+            const next = (current + 1) % colorPalette.length;
+            tile.dataset.colorIndex = next;
+            tile.style.background = colorPalette[next];
+            tile.classList.add("painted");
+
+            if (current === -1) {
+                paintedCount += 1;
+                document.getElementById("paintedCount").innerText = paintedCount;
+            }
+        }
+    </script>
+</body>
+
+</html>

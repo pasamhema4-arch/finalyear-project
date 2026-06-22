@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MindScan AI - Register</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+    <nav class="navbar">
+        <h2>🧠 MindScan AI</h2>
+        <div class="auth-buttons" id="auth-buttons">
+            <a href="/login" class="btn btn-secondary">Login</a>
+        </div>
+    </nav>
+
+    <div class="main-content">
+        <div class="glass-card center-form">
+            <h3>Create an Account</h3>
+            <p class="text-muted text-sm" style="margin-bottom: 2rem;">Start your journey to better mental health.</p>
+            
+            <form id="registerForm" onsubmit="event.preventDefault(); register();">
+                <div class="input-group">
+                    <label>Username</label>
+                    <input type="text" id="username" required placeholder="Your name">
+                </div>
+                <div class="input-group">
+                    <label>Email Address</label>
+                    <input type="email" id="email" required placeholder="you@example.com">
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="password" required placeholder="••••••••">
+                </div>
+                <button type="submit" class="btn mt-1" id="regBtn">Sign Up</button>
+                <div id="msg" class="msg-alert"></div>
+            </form>
+            
+            <p class="mt-2 text-sm">Already have an account? <a href="/login" style="color: var(--primary);">Log in</a></p>
+        </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+    <script>
+        async function register() {
+            const btn = document.getElementById("regBtn");
+            const username = document.getElementById("username").value;
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+            
+            btn.innerHTML = '<span class="spinner"></span> Creating...';
+            btn.disabled = true;
+            let res;
+            
+            try {
+                res = await fetch(`${API_BASE}/auth/register`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username, email, password })
+                });
+                
+                const data = await res.json();
+                if (res.ok) {
+                    showAlert("msg", "Account created successfully! Redirecting...", "success");
+                    setTimeout(() => window.location.href = "/login", 1500);
+                } else {
+                    showAlert("msg", data.message || "Registration failed", "error");
+                }
+            } catch (error) {
+                showAlert("msg", "Server connection failed.", "error");
+            } finally {
+                if (!res || !res.ok) {
+                    btn.innerHTML = 'Sign Up';
+                    btn.disabled = false;
+                }
+            }
+        }
+    </script>
+</body>
+</html>

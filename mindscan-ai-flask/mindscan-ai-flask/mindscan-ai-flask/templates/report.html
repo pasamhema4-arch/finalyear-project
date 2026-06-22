@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MindScan AI - Reports</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <nav class="navbar">
+        <h2 onclick="window.location.href='/dashboard'">🧠 MindScan AI</h2>
+        <div class="nav-links" id="nav-links" style="display: none;">
+            <a href="/dashboard">Dashboard</a>
+            <a href="/journal">Journal</a>
+            <a href="/report" class="active">Reports</a>
+            <a href="/chatbot">Chat</a>
+            <a href="/games">Games</a>
+            <a href="/settings">Settings</a>
+        </div>
+        <div style="display: flex; align-items: center;">
+            <div class="bell-icon" id="notif-bell" onclick="toggleNotifs()">
+                🔔<span class="badge" id="notif-badge" style="display:none">0</span>
+                <div class="notif-dropdown" id="notif-dropdown">
+                    <div id="notif-list"></div>
+                </div>
+            </div>
+            <div class="auth-buttons" id="auth-buttons"></div>
+        </div>
+    </nav>
+
+    <div class="main-content">
+        <h1 class="hero-title" style="font-size: 2.5rem; text-align: left;">Wellness Reports & Trends</h1>
+        <p class="text-muted" style="margin-bottom: 2rem;">Analyze your emotional trends and stress levels over time.</p>
+        
+        <div class="entity-summary-grid">
+            <div class="glass-card report-stat-card">
+                <h4>Mood Logs</h4>
+                <p class="stat-value" id="statMood">0</p>
+                <p class="text-sm text-muted">Total mood entries analyzed</p>
+            </div>
+            <div class="glass-card report-stat-card">
+                <h4>Journal Entries</h4>
+                <p class="stat-value" id="statJournal">0</p>
+                <p class="text-sm text-muted">Reflections captured by AI</p>
+            </div>
+            <div class="glass-card report-stat-card">
+                <h4>Alerts</h4>
+                <p class="stat-value" id="statNotifs">0</p>
+                <p class="text-sm text-muted">Notifications generated</p>
+            </div>
+        </div>
+
+        <div class="grid-container">
+            <!-- Emotion Distribution Pie -->
+            <div class="glass-card">
+                <h3>Emotion Breakdown</h3>
+                <p class="text-sm text-muted mb-2">Overall distribution of your recorded emotions.</p>
+                <div class="chart-box">
+                    <canvas id="pieChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Weekly Report Breakdown -->
+            <div class="glass-card">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3>Weekly Summary</h3>
+                    <button class="btn btn-secondary text-sm" onclick="window.print()" style="padding: 5px 10px;">PDF</button>
+                </div>
+                <div id="weeklyResult" class="report-data weekly-summary-container" style="min-height: 320px;">
+                    <div id="weeklyRisk" class="weekly-summary-note weekly-summary-loading">
+                        <span class="spinner"></span> Loading weekly summary...
+                    </div>
+                </div>
+            </div>
+            
+            <div class="glass-card" style="grid-column: 1 / -1;">
+                <h3>Emotion Timeline</h3>
+                <p class="text-sm text-muted mb-2">Your recent journaling and input history.</p>
+                <div class="chart-box" style="height: 400px;">
+                    <canvas id="lineChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+    <script>
+        requireAuth();
+
+        async function loadCharts() {
+            try {
+                const resSummary = await authFetch("/analysis/entity-summary");
+                if (resSummary.ok) {
+                    const summary = await resSummary.json();
+                    document.getElementById('statMood').innerText = summary.mood_entries;
+                    document.getElementById('statJournal').innerText = summary.journal_entries;
+                    document.getElementById('statNotifs').innerText = summary.notifications;
+                    document.getElementById('weeklyRisk').innerHTML = `
+                        <strong>Risk Level:</strong> ${summary.risk_level ? summary.risk_level.toUpperCase() : 'N/A'}<br>
+                        <strong>Action:</strong> ${summary.risk_message || 'No action needed.'}<br>
+                    `;
+                }
+
+                const resWeek = await authFetch("/analysis/weekly-report");
+                if (resWeek.ok) {
+                    const weekData = await resWeek.json();
+                    const totalLogs = weekData.total_posts || 0;
+                    const positiveRatio = totalLogs ? Math.round((weekData.positive_count / totalLogs) * 100) : 0;
+                    const negativeRatio = totalLogs ? Math.round((weekData.negative_count / totalLogs) * 100) : 0;
+                    const summaryHtml = `
+                        <div class="weekly-summary-grid">
+                            <div class="weekly-summary-item">
+                                <span class="summary-label">Mood logs</span>
+                                <strong>${totalLogs}</strong>
+                            </div>
+                            <div class="weekly-summary-item">
+                                <span class="summary-label">Journal entries</span>
+                                <strong>${weekData.journal_entries_week}</strong>
+                            </div>
+                            <div class="weekly-summary-item">
+                                <span class="summary-label">Positive ratio</span>
+                                <strong>${positiveRatio}%</strong>
+                            </div>
+                            <div class="weekly-summary-item">
+                                <span class="summary-label">Negative ratio</span>
+                                <strong>${negativeRatio}%</strong>
+                            </div>
+                            <div class="weekly-summary-item">
+                                <span class="summary-label">Avg. confidence</span>
+                                <strong>${(weekData.average_confidence * 100).toFixed(0)}%</strong>
+                            </div>
+                            <div class="weekly-summary-item">
+                                <span class="summary-label">Avg. stress</span>
+                                <strong>${weekData.average_stress}</strong>
+                            </div>
+                        </div>
+                        <div class="weekly-summary-note">
+                            <h4>Insight</h4>
+                            <p><strong>Dominant emotion:</strong> ${weekData.dominant_emotion.toUpperCase()}</p>
+                            <p>${weekData.suggestion}</p>
+                        </div>
+                    `;
+                    document.getElementById('weeklyResult').innerHTML += summaryHtml;
+                }
+
+                const resGraph = await authFetch("/analysis/emotion-graph");
+                if (resGraph.ok) {
+                    const data = await resGraph.json();
+                    const ctxPie = document.getElementById('pieChart').getContext('2d');
+                    new Chart(ctxPie, {
+                        type: 'doughnut',
+                        data: {
+                            labels: Object.keys(data),
+                            datasets: [{
+                                data: Object.values(data),
+                                backgroundColor: ['#8b5cf6', '#ec4899', '#fca5a5', '#6ee7b7', '#fcd34d', '#a78bfa'],
+                                borderWidth: 0
+                            }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: '#f8fafc' } } } }
+                    });
+                }
+
+                const resTrends = await authFetch("/analysis/weekly-trends");
+                if (resTrends.ok) {
+                    const trend = await resTrends.json();
+                    const ctxLine = document.getElementById('lineChart').getContext('2d');
+                    new Chart(ctxLine, {
+                        type: 'line',
+                        data: {
+                            labels: trend.labels,
+                            datasets: [
+                                {
+                                    label: 'Stress Trend',
+                                    data: trend.stress_trend,
+                                    borderColor: '#ec4899',
+                                    backgroundColor: 'rgba(236, 72, 153, 0.2)',
+                                    fill: true,
+                                    tension: 0.4
+                                },
+                                {
+                                    label: 'Entries per Day',
+                                    data: trend.entry_counts,
+                                    borderColor: '#6ee7b7',
+                                    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                                    fill: false,
+                                    tension: 0.4
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: { ticks: { color: '#f8fafc' } },
+                                x: { ticks: { color: '#94a3b8' } }
+                            },
+                            plugins: { legend: { labels: { color: '#f8fafc' } } }
+                        }
+                    });
+                }
+            } catch (err) {
+                console.error(err);
+                document.getElementById("weeklyResult").innerHTML = `<span class="text-danger">Failed to load reports.</span>`;
+            }
+        }
+        
+        loadCharts();
+
+    </script>
+</body>
+</html>

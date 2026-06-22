@@ -1,0 +1,1 @@
+-r mindscan-ai-flask/requirements.txt

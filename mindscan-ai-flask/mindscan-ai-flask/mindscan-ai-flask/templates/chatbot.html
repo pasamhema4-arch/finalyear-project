@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MindScan AI - Counselor</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+    <nav class="navbar">
+        <h2 onclick="window.location.href='/dashboard'">🧠 MindScan AI</h2>
+        <div class="nav-links" id="nav-links" style="display: none;">
+            <a href="/dashboard">Dashboard</a>
+            <a href="/report">Reports</a>
+            <a href="/chatbot" class="active">Chat</a>
+            <a href="/games">Games</a>
+            <a href="/settings">Settings</a>
+        </div>
+        <div class="auth-buttons" id="auth-buttons"></div>
+    </nav>
+
+    <div class="main-content">
+        <div class="glass-card" style="max-width: 800px; margin: 0 auto; padding: 1.5rem;">
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--card-border); padding-bottom: 1rem;">
+                <div style="width: 40px; height: 40px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">🤖</div>
+                <div>
+                    <h3 style="margin: 0; font-size: 1.2rem;">AI Counselor</h3>
+                    <p class="text-sm text-muted">Always here to listen and support.</p>
+                </div>
+            </div>
+
+            <div class="chat-container" id="chatBox">
+                <div class="message bot">Hello! I'm here to support you. How are you feeling today?</div>
+            </div>
+
+            <!-- Interactive Quick Prompts -->
+            <div style="display: flex; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap;">
+                <button class="btn btn-secondary" style="padding: 0.3rem 0.8rem; font-size: 0.8rem; width: auto;" onclick="setAndSend('I feel overwhelmed.')">I feel overwhelmed</button>
+                <button class="btn btn-secondary" style="padding: 0.3rem 0.8rem; font-size: 0.8rem; width: auto;" onclick="setAndSend('How can I stay calm?')">How can I stay calm?</button>
+                <button class="btn btn-secondary" style="padding: 0.3rem 0.8rem; font-size: 0.8rem; width: auto;" onclick="setAndSend('I had a great day!')">I had a great day!</button>
+                <button class="btn btn-secondary" style="padding: 0.3rem 0.8rem; font-size: 0.8rem; width: auto;" onclick="setAndSend('Help me relax.')">Help me relax</button>
+            </div>
+
+            <form id="chatForm" onsubmit="event.preventDefault(); sendMessage();" style="display: flex; gap: 1rem; margin-top: 1rem;">
+                <input type="text" id="chatInput" placeholder="Type your message..." autocomplete="off" style="flex: 1;" required>
+                <button type="submit" class="btn" style="width: auto; padding: 0 2rem;" id="sendBtn">Send</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+    <script>
+        requireAuth();
+
+        function setAndSend(text) {
+            document.getElementById("chatInput").value = text;
+            sendMessage();
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById("chatInput");
+            const box = document.getElementById("chatBox");
+            const btn = document.getElementById("sendBtn");
+            const msg = input.value.trim();
+            
+            if (!msg) return;
+
+            // Add user message to UI
+            box.innerHTML += `<div class="message user">${msg}</div>`;
+            input.value = "";
+            box.scrollTop = box.scrollHeight;
+
+            // Show typing indicator
+            const typingId = 'typing-' + Date.now();
+            box.innerHTML += `<div class="message bot text-muted text-sm" id="${typingId}">Thinking...</div>`;
+            box.scrollTop = box.scrollHeight;
+            
+            btn.disabled = true;
+
+            try {
+                const res = await authFetch("/analysis/chatbot", {
+                    method: "POST",
+                    body: JSON.stringify({ message: msg })
+                });
+                
+                const data = await res.json();
+                
+                // Remove typing indicator
+                const typingEl = document.getElementById(typingId);
+                if(typingEl) typingEl.remove();
+
+                if (res.ok) {
+                    box.innerHTML += `<div class="message bot">${data.reply}</div>`;
+                } else {
+                    box.innerHTML += `<div class="message bot text-danger">Sorry, I encountered an error.</div>`;
+                }
+            } catch (error) {
+                const typingEl = document.getElementById(typingId);
+                if(typingEl) typingEl.remove();
+                box.innerHTML += `<div class="message bot" style="color: #fca5a5;">Network error. Please try again.</div>`;
+            } finally {
+                btn.disabled = false;
+                box.scrollTop = box.scrollHeight;
+                input.focus();
+            }
+        }
+    </script>
+</body>
+</html>

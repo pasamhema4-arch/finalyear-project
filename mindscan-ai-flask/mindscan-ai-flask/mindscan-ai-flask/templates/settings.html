@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MindScan AI - Settings</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+    <nav class="navbar">
+        <h2 onclick="window.location.href='/dashboard'">🧠 MindScan AI</h2>
+        <div class="nav-links" id="nav-links" style="display: none;">
+            <a href="/dashboard">Dashboard</a>
+            <a href="/journal">Journal</a>
+            <a href="/report">Reports</a>
+            <a href="/chatbot">Chat</a>
+            <a href="/games">Games</a>
+            <a href="/settings" class="active">Settings</a>
+        </div>
+        <div style="display: flex; align-items: center;">
+            <div class="bell-icon" id="notif-bell" onclick="toggleNotifs()">
+                🔔<span class="badge" id="notif-badge" style="display:none">0</span>
+                <div class="notif-dropdown" id="notif-dropdown">
+                    <div id="notif-list"></div>
+                </div>
+            </div>
+            <div class="auth-buttons" id="auth-buttons"></div>
+        </div>
+    </nav>
+
+    <div class="main-content">
+        <h1 class="hero-title" style="font-size: 2.5rem; text-align: left;">Account Settings</h1>
+        <p class="text-muted" style="margin-bottom: 2rem;">Manage your privacy and security settings.</p>
+        
+        <div class="grid-container" style="max-width: 800px; margin: 0 auto;">
+            
+            <!-- Profile Info -->
+            <div class="glass-card">
+                <h3>Profile Information</h3>
+                <p><strong>Username:</strong> <span id="sUsername">Loading...</span></p>
+                <p><strong>Email:</strong> <span id="sEmail">Loading...</span></p>
+            </div>
+
+            <!-- Privacy Controls -->
+            <div class="glass-card">
+                <h3>Privacy Settings</h3>
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+                    <span>Share anonymized data for AI training</span>
+                    <input type="checkbox" id="shareDataCheck" style="transform: scale(1.5);">
+                </div>
+                <button class="btn btn-secondary" onclick="updatePrivacy()">Save Preferences</button>
+                <div id="pResult" class="text-sm mt-1"></div>
+            </div>
+
+            <!-- Security Controls -->
+            <div class="glass-card" style="border-left: 4px solid var(--danger);">
+                <h3 style="color: var(--danger)">Danger Zone</h3>
+                <p class="text-sm text-muted mb-2">Once you delete your account, there is no going back. Please be certain.</p>
+                <button class="btn" style="background: var(--danger);" onclick="deleteAccount()">Delete Account</button>
+                <div id="dResult" class="text-sm mt-1 text-danger"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+    <script>
+        requireAuth();
+
+        async function loadProfile() {
+            try {
+                const res = await authFetch("/auth/profile");
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById("sUsername").innerText = data.username;
+                    document.getElementById("sEmail").innerText = data.email;
+                    
+                    try {
+                        const prefs = JSON.parse(data.privacy_settings || '{}');
+                        document.getElementById("shareDataCheck").checked = prefs.share_data || false;
+                    } catch(e) {}
+                }
+            } catch(e) {}
+        }
+
+        async function updatePrivacy() {
+            const checked = document.getElementById("shareDataCheck").checked;
+            const prefs = JSON.stringify({ share_data: checked });
+
+            try {
+                const res = await authFetch("/auth/update-profile", {
+                    method: "PUT",
+                    body: JSON.stringify({ privacy_settings: prefs })
+                });
+                if(res.ok) {
+                    document.getElementById("pResult").innerText = "Preferences saved securely!";
+                    document.getElementById("pResult").style.color = "var(--success)";
+                } else {
+                    document.getElementById("pResult").innerText = "Failed to save.";
+                }
+            } catch(e) {
+                document.getElementById("pResult").innerText = "Network error.";
+            }
+        }
+
+        async function deleteAccount() {
+            if(!confirm("Are you ABSOLUTELY sure you want to delete your account? All journals and mood data will be permanently erased. This cannot be undone.")) return;
+
+            try {
+                const res = await authFetch("/auth/delete-account", { method: "DELETE" });
+                if(res.ok) {
+                    alert("Your account has been securely deleted.");
+                    logout();
+                } else {
+                    document.getElementById("dResult").innerText = "Failed to delete account.";
+                }
+            } catch(e) {
+                document.getElementById("dResult").innerText = "Network error.";
+            }
+        }
+
+        loadProfile();
+    </script>
+</body>
+</html>

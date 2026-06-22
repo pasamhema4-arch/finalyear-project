@@ -1,0 +1,10 @@
+Flask
+Flask-SQLAlchemy
+Flask-JWT-Extended
+Flask-Bcrypt
+langdetect
+transformers
+torch
+Flask-Cors
+deep-translator
+
